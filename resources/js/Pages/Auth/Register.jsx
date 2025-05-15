@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Register() {
-    const [userType, setUserType] = useState('player');
-    const [formData, setFormData] = useState({
+    const playerPositions = [
+        'Portero', 'Defensa central', 'Lateral derecho', 'Lateral izquierdo',
+        'Mediocentro defensivo', 'Mediocentro', 'Mediocentro ofensivo',
+        'Extremo derecho', 'Extremo izquierdo', 'Delantero centro'
+    ];
+
+    const { data, setData, post, processing, errors, reset } = useForm({
         type: 'player',
         name: '',
         lastName: '',
@@ -17,49 +22,61 @@ export default function Register() {
         currentTeam: '',
         bio: '',
         profilePhoto: null,
-        // Campos específicos de entrenador
         teamManaged: '',
         coachingLicense: ''
     });
 
     const [showPassword, setShowPassword] = useState(false);
-    const [errors, setErrors] = useState({});
-
-    const playerPositions = [
-        'Portero', 'Defensa central', 'Lateral derecho', 'Lateral izquierdo',
-        'Mediocentro defensivo', 'Mediocentro', 'Mediocentro ofensivo',
-        'Extremo derecho', 'Extremo izquierdo', 'Delantero centro'
-    ];
+    const [userType, setUserType] = useState('player');
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: files ? files[0] : value
-        }));
+        setData(name, files ? files[0] : value);
+    };
+
+    const handleUserTypeChange = (type) => {
+        setUserType(type);
+        setData('type', type);
+        // Reset campos específicos al cambiar tipo
+        if (type === 'player') {
+            reset('teamManaged', 'coachingLicense');
+        } else {
+            reset('position', 'secondaryPosition', 'currentTeam', 'bio');
+        }
     };
 
     const validateForm = () => {
-        const newErrors = {};
+        const validationErrors = {};
         
-        if (formData.password.length < 8) {
-            newErrors.password = "La contraseña debe tener al menos 8 caracteres";
+        if (data.password.length < 8) {
+            validationErrors.password = "La contraseña debe tener al menos 8 caracteres";
         }
         
-        if (formData.password !== formData.password_confirmation) {
-            newErrors.password_confirmation = "Las contraseñas no coinciden";
+        if (data.password !== data.password_confirmation) {
+            validationErrors.password_confirmation = "Las contraseñas no coinciden";
         }
         
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return validationErrors;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (validateForm()) {
-            // Aquí iría la lógica para enviar el formulario
-            console.log('Datos enviados:', formData);
+        
+        const formErrors = validateForm();
+        if (Object.keys(formErrors).length > 0) {
+            return; // Los errores se mostrarán automáticamente
         }
+
+        post('/register', {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                // Redirección manejada por el controlador
+            },
+            onError: () => {
+                // Los errores del servidor se manejan automáticamente
+            }
+        });
     };
 
     return (
@@ -71,17 +88,14 @@ export default function Register() {
                             <h2 className="h4 mb-0">Registro en FootballSocial</h2>
                         </div>
                         <div className="card-body">
-                            <form onSubmit={handleSubmit}>
+                            <form onSubmit={handleSubmit} encType="multipart/form-data">
                                 {/* Selección de tipo de usuario */}
                                 <div className="mb-4">
                                     <label className="form-label fw-bold">¿Eres jugador o entrenador?</label>
                                     <select 
                                         className="form-select"
                                         value={userType}
-                                        onChange={(e) => {
-                                            setUserType(e.target.value);
-                                            setFormData(prev => ({ ...prev, type: e.target.value }));
-                                        }}
+                                        onChange={(e) => handleUserTypeChange(e.target.value)}
                                     >
                                         <option value="player">Jugador</option>
                                         <option value="coach">Entrenador</option>
@@ -94,23 +108,25 @@ export default function Register() {
                                         <label className="form-label">Nombre</label>
                                         <input
                                             type="text"
-                                            className="form-control"
+                                            className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                                             name="name"
-                                            value={formData.name}
+                                            value={data.name}
                                             onChange={handleChange}
                                             required
                                         />
+                                        {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label">Apellido</label>
                                         <input
                                             type="text"
-                                            className="form-control"
+                                            className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
                                             name="lastName"
-                                            value={formData.lastName}
+                                            value={data.lastName}
                                             onChange={handleChange}
                                             required
                                         />
+                                        {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
                                     </div>
                                 </div>
 
@@ -119,23 +135,25 @@ export default function Register() {
                                         <label className="form-label">Nombre de usuario</label>
                                         <input
                                             type="text"
-                                            className="form-control"
+                                            className={`form-control ${errors.username ? 'is-invalid' : ''}`}
                                             name="username"
-                                            value={formData.username}
+                                            value={data.username}
                                             onChange={handleChange}
                                             required
                                         />
+                                        {errors.username && <div className="invalid-feedback">{errors.username}</div>}
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label">Correo electrónico</label>
                                         <input
                                             type="email"
-                                            className="form-control"
+                                            className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                                             name="email"
-                                            value={formData.email}
+                                            value={data.email}
                                             onChange={handleChange}
                                             required
                                         />
+                                        {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                                     </div>
                                 </div>
 
@@ -147,7 +165,7 @@ export default function Register() {
                                                 type={showPassword ? "text" : "password"}
                                                 className={`form-control ${errors.password ? 'is-invalid' : ''}`}
                                                 name="password"
-                                                value={formData.password}
+                                                value={data.password}
                                                 onChange={handleChange}
                                                 required
                                             />
@@ -169,7 +187,7 @@ export default function Register() {
                                             type={showPassword ? "text" : "password"}
                                             className={`form-control ${errors.password_confirmation ? 'is-invalid' : ''}`}
                                             name="password_confirmation"
-                                            value={formData.password_confirmation}
+                                            value={data.password_confirmation}
                                             onChange={handleChange}
                                             required
                                         />
@@ -183,12 +201,13 @@ export default function Register() {
                                     <label className="form-label">Número de teléfono</label>
                                     <input
                                         type="tel"
-                                        className="form-control"
+                                        className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
                                         name="phone"
-                                        value={formData.phone}
+                                        value={data.phone}
                                         onChange={handleChange}
                                         required
                                     />
+                                    {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
                                 </div>
 
                                 {/* Campos específicos para jugadores */}
@@ -198,9 +217,9 @@ export default function Register() {
                                             <div className="col-md-6">
                                                 <label className="form-label">Posición principal</label>
                                                 <select
-                                                    className="form-select"
+                                                    className={`form-select ${errors.position ? 'is-invalid' : ''}`}
                                                     name="position"
-                                                    value={formData.position}
+                                                    value={data.position}
                                                     onChange={handleChange}
                                                     required
                                                 >
@@ -209,13 +228,14 @@ export default function Register() {
                                                         <option key={pos} value={pos}>{pos}</option>
                                                     ))}
                                                 </select>
+                                                {errors.position && <div className="invalid-feedback">{errors.position}</div>}
                                             </div>
                                             <div className="col-md-6">
                                                 <label className="form-label">Posición secundaria (opcional)</label>
                                                 <select
-                                                    className="form-select"
+                                                    className={`form-select ${errors.secondaryPosition ? 'is-invalid' : ''}`}
                                                     name="secondaryPosition"
-                                                    value={formData.secondaryPosition}
+                                                    value={data.secondaryPosition}
                                                     onChange={handleChange}
                                                 >
                                                     <option value="">No tengo</option>
@@ -223,6 +243,7 @@ export default function Register() {
                                                         <option key={pos} value={pos}>{pos}</option>
                                                     ))}
                                                 </select>
+                                                {errors.secondaryPosition && <div className="invalid-feedback">{errors.secondaryPosition}</div>}
                                             </div>
                                         </div>
 
@@ -230,23 +251,25 @@ export default function Register() {
                                             <label className="form-label">Equipo actual (opcional)</label>
                                             <input
                                                 type="text"
-                                                className="form-control"
+                                                className={`form-control ${errors.currentTeam ? 'is-invalid' : ''}`}
                                                 name="currentTeam"
-                                                value={formData.currentTeam}
+                                                value={data.currentTeam}
                                                 onChange={handleChange}
                                             />
+                                            {errors.currentTeam && <div className="invalid-feedback">{errors.currentTeam}</div>}
                                         </div>
 
                                         <div className="mb-4">
                                             <label className="form-label">Descripción breve</label>
                                             <textarea
-                                                className="form-control"
+                                                className={`form-control ${errors.bio ? 'is-invalid' : ''}`}
                                                 name="bio"
                                                 rows="3"
-                                                value={formData.bio}
+                                                value={data.bio}
                                                 onChange={handleChange}
                                                 placeholder="Describe tu estilo de juego, fortalezas, etc."
                                             ></textarea>
+                                            {errors.bio && <div className="invalid-feedback">{errors.bio}</div>}
                                         </div>
                                     </>
                                 )}
@@ -258,19 +281,20 @@ export default function Register() {
                                             <label className="form-label">Equipo que diriges (opcional)</label>
                                             <input
                                                 type="text"
-                                                className="form-control"
+                                                className={`form-control ${errors.teamManaged ? 'is-invalid' : ''}`}
                                                 name="teamManaged"
-                                                value={formData.teamManaged}
+                                                value={data.teamManaged}
                                                 onChange={handleChange}
                                             />
+                                            {errors.teamManaged && <div className="invalid-feedback">{errors.teamManaged}</div>}
                                         </div>
 
                                         <div className="mb-4">
                                             <label className="form-label">Licencia de entrenador</label>
                                             <select
-                                                className="form-select"
+                                                className={`form-select ${errors.coachingLicense ? 'is-invalid' : ''}`}
                                                 name="coachingLicense"
-                                                value={formData.coachingLicense}
+                                                value={data.coachingLicense}
                                                 onChange={handleChange}
                                                 required
                                             >
@@ -281,31 +305,43 @@ export default function Register() {
                                                 <option value="Nacional">Nacional</option>
                                                 <option value="Otro">Otro</option>
                                             </select>
+                                            {errors.coachingLicense && <div className="invalid-feedback">{errors.coachingLicense}</div>}
                                         </div>
                                     </>
                                 )}
 
-                                {/* Foto de perfil (común para ambos) */}
+                                {/* Foto de perfil */}
                                 <div className="mb-4">
                                     <label className="form-label">Foto de perfil</label>
                                     <input
                                         type="file"
-                                        className="form-control"
+                                        className={`form-control ${errors.profilePhoto ? 'is-invalid' : ''}`}
                                         name="profilePhoto"
                                         onChange={handleChange}
                                         accept="image/*"
                                     />
+                                    {errors.profilePhoto && <div className="invalid-feedback">{errors.profilePhoto}</div>}
+                                    <small className="text-muted">Formatos aceptados: JPG, PNG (Máx. 2MB)</small>
                                 </div>
 
                                 <div className="d-grid gap-2">
-                                    <button type="submit" className="btn btn-success btn-lg">
-                                        Registrarse
+                                    <button 
+                                        type="submit" 
+                                        className="btn btn-success btn-lg"
+                                        disabled={processing}
+                                    >
+                                        {processing ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                Registrando...
+                                            </>
+                                        ) : 'Registrarse'}
                                     </button>
                                 </div>
 
                                 <div className="mt-3 text-center">
                                     <span>¿Ya tienes cuenta? </span>
-                                    <Link href="/login" className="text-success">Inicia sesión</Link>
+                                    <Link href="/login" className="text-success fw-bold">Inicia sesión</Link>
                                 </div>
                             </form>
                         </div>
