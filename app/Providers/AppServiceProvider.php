@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Compartir información del usuario autenticado globalmente en Inertia
+        Inertia::share('auth', function () {
+            $user = Auth::user();
+            return [
+                'user' => $user ? [
+                    'name' => $user->name,
+                    'profile_photo_url' => $user->profilePhotoUrl(),
+                    'type' => $user->type,
+                ] : null,
+            ];
+        });
     }
 }

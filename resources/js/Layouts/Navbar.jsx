@@ -1,9 +1,42 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
+
+
 function Navbar({ onToggleMobileMenu }) {
-    const { props } = usePage();
-    const isLoggedIn = props.auth?.user;
+    const { auth } = usePage().props;
+    const user = auth?.user;
+    const isLoggedIn = !!user;
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [search, setSearch] = useState('');
+
+    // Devuelve el JSX del avatar: imagen si existe, si no el icono Bootstrap
+    function ProfileAvatar() {
+        if (user?.profile_photo_url) {
+            return (
+                <img 
+                    src={user.profile_photo_url} 
+                    alt="Perfil" 
+                    className="rounded-circle me-2"
+                    width="28"
+                    height="28"
+                    style={{ objectFit: 'cover' }}
+                />
+            );
+        }
+        // Icono Bootstrap Person Circle
+        return (
+            <i className="bi bi-person-circle me-2" style={{ fontSize: '28px', color: 'white', verticalAlign: 'middle' }}></i>
+        );
+    }
+
+    // Submit búsqueda
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        if (search.trim()) {
+            router.get('/search', { q: search });
+            setSearch('');
+        }
+    };
 
     return (
         <nav className="navbar navbar-expand-lg navbar-dark bg-success fixed-top" style={{
@@ -24,17 +57,19 @@ function Navbar({ onToggleMobileMenu }) {
 
                 {/* Barra de búsqueda */}
                 <div className="d-flex align-items-center flex-grow-1" style={{ maxWidth: '500px' }}>
-                    <div className="input-group">
+                    <form className="input-group w-100" onSubmit={handleSearchSubmit}>
                         <input 
-                            type="search" 
-                            className="form-control bg-light" 
-                            placeholder="Buscar partidos, jugadores..." 
+                            type="search"
+                            className="form-control bg-light"
+                            placeholder="Buscar usuarios por nombre de usuario..."
                             style={{ borderRadius: '20px 0 0 20px' }}
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
                         />
-                        <button className="btn btn-light" type="button" style={{ borderRadius: '0 20px 20px 0' }}>
+                        <button className="btn btn-light" type="submit" style={{ borderRadius: '0 20px 20px 0' }}>
                             <i className="bi bi-search"></i>
                         </button>
-                    </div>
+                    </form>
                 </div>
 
                 {/* Menú de perfil */}
@@ -50,16 +85,9 @@ function Navbar({ onToggleMobileMenu }) {
                                 }}
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                             >
-                                <img 
-                                    src={props.auth.user.profile_photo_url || '/images/default-avatar.png'} 
-                                    alt="Perfil" 
-                                    className="rounded-circle me-2" 
-                                    width="28" 
-                                    height="28"
-                                />
-                                <span className="d-none d-md-inline">{props.auth.user.name}</span>
+                                <ProfileAvatar />
+                                <span className="d-none d-md-inline">{user.name}</span>
                             </button>
-                            
                             <ul className={`dropdown-menu dropdown-menu-end ${isProfileOpen ? 'show' : ''}`}
                                 style={{ minWidth: '220px' }}>
                                 <li>

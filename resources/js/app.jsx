@@ -3,6 +3,8 @@ import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Layout from "./Layouts/Layout";
+import 'bootstrap-icons/font/bootstrap-icons.css';
+
 
 createInertiaApp({
   resolve: name => {

@@ -3,14 +3,20 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\UserTypeController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserSearchController;
 
 
 
 
-
-// Página de inicio (Home)
 Route::get('/', function () {
-    return Inertia::render('Home'); // Carga tu componente React/Vue/Svelte
+    if (Auth::check()) {
+        // Si el usuario ya está autenticado, mostrar Dashboard
+        return Inertia::render('Dashboard');
+    }
+    // Si no, mostrar Home público
+    return Inertia::render('Home');
 })->name('home');
 
 // Rutas de autenticación
@@ -22,10 +28,6 @@ Route::middleware('guest')->group(function () {
     // Login
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
-    //Manda informacion cuando es entrenador
-    Route::get('/coaches', [UserTypeController::class, 'coach'])->middleware('auth');
-    //Manda informacion cuando es jugador
-     Route::get('/coaches', [UserTypeController::class, 'player'])->middleware('auth');
 });
 
 // Rutas protegidas (requieren autenticación)
@@ -34,13 +36,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
-    Route::get('/coaches', function () {
-        return Inertia::render('Coaches');
-    })->name('coaches');
-    Route::get('/players', function () {
-        return Inertia::render('PLayers');
-    })->name('Players');
-
+    //Manda informacion cuando es entrenador
+    Route::get('/coaches', [UserTypeController::class, 'coaches'])->name('coaches');
+    //Manda informacion cuando es jugador
+    Route::get('/players', [UserTypeController::class, 'players'])->name('players');
+    // Tu propio perfil (usuario logeado)
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    // Ver el perfil de otro usuario por id
+    Route::get('/users/{id}', [ProfileController::class, 'showOther'])->name('users.profile');
+    // Buscar usuarios
+    Route::get('/search', [UserSearchController::class, 'index'])->name('user.search');
     // Cerrar sesión
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    // web.php
+   
+
 });
