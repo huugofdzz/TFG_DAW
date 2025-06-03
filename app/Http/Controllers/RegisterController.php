@@ -31,7 +31,7 @@ class RegisterController extends Controller
             'profilePhoto' => 'nullable|image|max:2048',
             
             // Validación condicional para jugadores
-            'position' => 'required_if:type,player|string|max:255',
+            'position' => 'required_if:type,player|nullable|string|max:255',
             'secondaryPosition' => 'nullable|string|max:255',
             'currentTeam' => 'nullable|string|max:255',
             'bio' => 'nullable|string|max:500',
@@ -70,6 +70,6 @@ class RegisterController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
-        return redirect()->route('/dashboard');
+        return redirect()->route('dashboard');
     }
 }

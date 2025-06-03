@@ -37,13 +37,25 @@ export default function Register() {
     const handleUserTypeChange = (type) => {
         setUserType(type);
         setData('type', type);
-        // Reset campos específicos al cambiar tipo
+
         if (type === 'player') {
-            reset('teamManaged', 'coachingLicense');
+            setData(prev => ({
+                ...prev,
+                teamManaged: '',
+                coachingLicense: ''
+            }));
         } else {
-            reset('position', 'secondaryPosition', 'currentTeam', 'bio');
+            setData(prev => ({
+                ...prev,
+                position: '',
+                secondaryPosition: '',
+                currentTeam: '',
+                bio: ''
+            }));
         }
     };
+
+
 
     const validateForm = () => {
         const validationErrors = {};
